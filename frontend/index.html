@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cartify — Products</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="navbar" class="navbar"></header>
+
+  <main class="container">
+    <div class="filters">
+      <input type="text" id="search-input" placeholder="Search products..." />
+      <select id="category-filter">
+        <option value="">All categories</option>
+      </select>
+    </div>
+    <div id="product-grid" class="product-grid">
+      <p class="empty-state">Loading products...</p>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    renderNavbar();
+
+    let allProducts = [];
+
+    async function loadProducts() {
+      const grid = document.getElementById('product-grid');
+      try {
+        allProducts = await api('/products');
+        populateCategories(allProducts);
+        renderProducts(allProducts);
+      } catch (err) {
+        grid.innerHTML = `<p class="empty-state">Failed to load products.</p>`;
+      }
+    }
+
+    function populateCategories(products) {
+      const select = document.getElementById('category-filter');
+      const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+      categories.forEach((c) => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderProducts(products) {
+      const grid = document.getElementById('product-grid');
+      if (products.length === 0) {
+        grid.innerHTML = `<p class="empty-state">No products found.</p>`;
+        return;
+      }
+      grid.innerHTML = products
+        .map(
+          (p) => `
+        <a href="product.html?id=${p.id}" class="product-card">
+          <img src="${p.image_url}" alt="${p.name}" />
+          <div class="product-card-body">
+            <span class="category">${p.category || ''}</span>
+            <h3>${p.name}</h3>
+            <span class="price">₹${p.price.toFixed(2)}</span>
+          </div>
+        </a>
+      `
+        )
+        .join('');
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('search-input').value.toLowerCase();
+      const category = document.getElementById('category-filter').value;
+      let filtered = allProducts;
+      if (search) filtered = filtered.filter((p) => p.name.toLowerCase().includes(search));
+      if (category) filtered = filtered.filter((p) => p.category === category);
+      renderProducts(filtered);
+    }
+
+    document.getElementById('search-input').addEventListener('input', applyFilters);
+    document.getElementById('category-filter').addEventListener('change', applyFilters);
+
+    loadProducts();
+  </script>
+</body>
+</html>

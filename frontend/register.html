@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cartify — Sign up</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="navbar" class="navbar"></header>
+
+  <div class="form-card">
+    <h2>Create account</h2>
+    <form id="register-form">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" required />
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" minlength="6" required />
+      </div>
+      <button type="submit" class="btn btn-block">Sign up</button>
+      <p id="error-msg" class="error-msg"></p>
+    </form>
+    <p class="form-footer">Already have an account? <a href="login.html">Log in</a></p>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    renderNavbar();
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('error-msg');
+      try {
+        const { token, user } = await api('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ name, email, password }),
+        });
+        setSession(token, user);
+        window.location.href = 'index.html';
+      } catch (err) {
+        errorMsg.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

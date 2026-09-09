@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cartify — Product</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="navbar" class="navbar"></header>
+
+  <main class="container">
+    <div id="product-detail">Loading...</div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    renderNavbar();
+
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get('id');
+    let currentProduct = null;
+    let qty = 1;
+
+    async function loadProduct() {
+      const container = document.getElementById('product-detail');
+      try {
+        currentProduct = await api(`/products/${productId}`);
+        renderProduct();
+      } catch (err) {
+        container.innerHTML = `<p class="empty-state">Product not found.</p>`;
+      }
+    }
+
+    function renderProduct() {
+      const p = currentProduct;
+      const container = document.getElementById('product-detail');
+      container.innerHTML = `
+        <div class="product-detail">
+          <img src="${p.image_url}" alt="${p.name}" />
+          <div>
+            <span class="category">${p.category || ''}</span>
+            <h1>${p.name}</h1>
+            <p class="price">₹${p.price.toFixed(2)}</p>
+            <p class="desc">${p.description || ''}</p>
+            <p style="margin-bottom: 1rem; color: var(--muted); font-size: 0.85rem;">
+              ${p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
+            </p>
+            <div class="qty-selector">
+              <button id="qty-minus">-</button>
+              <span id="qty-value">1</span>
+              <button id="qty-plus">+</button>
+            </div>
+            <button id="add-to-cart-btn" class="btn btn-block" ${p.stock === 0 ? 'disabled' : ''}>
+              Add to Cart
+            </button>
+            <p id="add-msg"></p>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('qty-minus').addEventListener('click', () => {
+        if (qty > 1) { qty--; document.getElementById('qty-value').textContent = qty; }
+      });
+      document.getElementById('qty-plus').addEventListener('click', () => {
+        if (qty < p.stock) { qty++; document.getElementById('qty-value').textContent = qty; }
+      });
+      document.getElementById('add-to-cart-btn').addEventListener('click', addToCart);
+    }
+
+    async function addToCart() {
+      const msg = document.getElementById('add-msg');
+      if (!getToken()) {
+        window.location.href = 'login.html';
+        return;
+      }
+      try {
+        await api('/cart', {
+          method: 'POST',
+          body: JSON.stringify({ product_id: currentProduct.id, quantity: qty }),
+        });
+        msg.textContent = 'Added to cart!';
+        msg.className = 'success-msg';
+        updateCartCount();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.className = 'error-msg';
+      }
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>
